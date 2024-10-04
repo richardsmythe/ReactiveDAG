@@ -1,4 +1,4 @@
-# Reactive DAG
+# ReactiveDAG
 
 A dynamic directed acyclic graph engine that maintains reactive dependencies, enabling real-time event-driven computations and task execution.
 
