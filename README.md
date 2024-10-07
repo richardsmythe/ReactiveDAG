@@ -14,8 +14,6 @@ It functions like a **spreadsheet for computational workflows**—where each nod
   
 - **Dynamic and Real-Time Updates**: Supports real-time data processing, ensuring that dependent nodes are recalculated whenever inputs change, maintaining system consistency.
 
-- **Event-Driven Triggers**: Allows external events such as file uploads, HTTP requests, or database updates to trigger the execution of tasks, making the engine flexible and reactive to changes outside the graph.
-
 - **Scheduled Execution**: Supports scheduled task execution at defined intervals, ideal for time-based workflows like monitoring, reporting, and ETL (Extract, Transform, Load) processes.
 
 - **Reactive Computation**: Acts like a reactive data pipeline where updates in the system propagate through all affected tasks and nodes.
@@ -45,6 +43,8 @@ It simplifies the management of **complex dependencies** in systems where inputs
 ## TODO
 
 1. **Workflow Orchestration**: Let’s say you have several workflows—one for data ingestion, one for processing, and another for reporting. The DagEngine could orchestrate the start, pause, and resumption of each workflow independently. You could also track the progress of each workflow, ensuring that dependencies between nodes are respected and dynamically adjusting the workflow as needed 
+
+2. **Event-Driven Triggers**: Allows external events such as file uploads, HTTP requests, or database updates to trigger the execution of tasks, making the engine flexible and reactive to changes outside the graph.
 
 ## Contribution
 
