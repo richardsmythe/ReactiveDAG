@@ -33,9 +33,9 @@ namespace ReactiveDAG.Core.Models
             _interval = interval;
             _runOnce = runOnce;
             _cancellationTokenSource = new CancellationTokenSource();
-            State = new NodeState(NodeId, TaskState.Pending, null, new List<int>());
+            State = new NodeState(NodeId, TaskState.Pending, null, new List<int>(),cell.Type, cell.Type.GetType().FullName);
         }
-
+         
         public void Start()
         {
             if (State.State == TaskState.Pending || State.State == TaskState.Paused)
@@ -127,6 +127,9 @@ namespace ReactiveDAG.Core.Models
 
         internal object GetPartialResult()
         {
+            // TODO: Decide on how to store task progress.
+            // A partial result is related to the progress of the task. It's the intermediate outcomes that we need here.
+            // Need to track the task as it's executed so that it can be retrieved.
             throw new NotImplementedException();
         }
 
