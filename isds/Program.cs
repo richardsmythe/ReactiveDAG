@@ -66,9 +66,6 @@ internal class Program
         builder2.UpdateInput(cell4, 20);
 
         //
-        // Demo to show how Workflows can be created to manage multiple DAGs.
-        //
-
         Console.ReadLine();
     }
 }

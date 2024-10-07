@@ -135,10 +135,20 @@ namespace ReactiveDAG.Core.Models
 
         public void SaveNodeState(int nodeId)
         {
-            var serializedNode = _serializer.Serialize(this);
+            var nodeState = new NodeState(
+                NodeId,
+                State.State,
+                GetPartialResult(),
+                Dependencies.ToList(), 
+                Cell.Type,
+                Cell.GetType().GenericTypeArguments[0].FullName
+            );
+
+
+            var serializedNode = _serializer.Serialize(nodeState);
             var tempStoragePath = Path.Combine(Directory.GetCurrentDirectory(), "TempTaskStorage");
-            Directory.CreateDirectory(tempStoragePath);
-            var fileName = Path.Combine(tempStoragePath, $"NodeState_{nodeId}_{DateTime.Now:yyyyMMdd}.json");
+            Directory.CreateDirectory(tempStoragePath); 
+            var fileName = Path.Combine(tempStoragePath, $"NodeState_{nodeId}_{DateTime.Now:yyyyMMdd_HHmmss}.json");
             File.WriteAllText(fileName, serializedNode);
         }
 

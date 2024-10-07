@@ -6,21 +6,21 @@ namespace ReactiveDAG.Core.Services
 {
     public interface ITaskStateSerializer
     {
-        string Serialize(DagNode node);
+        string Serialize(NodeState node);
         DagNode Deserialize(string serializedData);
     }
 
     public class JsonTaskStateSerializer : ITaskStateSerializer
     {
-        public string Serialize(DagNode node)
+        public string Serialize(NodeState node)
         {
             var state = new NodeState(
                 node.NodeId,
-                node.State.State,
-                node.GetPartialResult(),
+                node.State,
+                node.PartialResult,
                 node.Dependencies.ToList(),
-                node.Cell.Type,
-                node.Cell.GetType().GenericTypeArguments[0].FullName 
+                node.CellType,
+                node.CellValueType
             );
 
             return JsonConvert.SerializeObject(state);

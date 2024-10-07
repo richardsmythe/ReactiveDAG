@@ -1,11 +1,10 @@
-﻿using ReactiveDAG.Core.Engine;
-using ReactiveDAG.Core.Models;
+﻿using ReactiveDAG.Core.Models;
 
-namespace ReactiveDAG.Core.WorkFlow
+namespace ReactiveDAG.Core.Engine
 {
-    internal class Workflow
+    public class Workflow
     {
-        public int WorkflowId { get; set; }
+        public Guid WorkflowId { get; set; }
         public string Name { get; set; }
         public TaskState State { get; set; } = TaskState.Pending;
         private List<DagEngine> _dagEngines = new List<DagEngine>();
@@ -13,6 +12,7 @@ namespace ReactiveDAG.Core.WorkFlow
         public Workflow(string name)
         {
             Name = name;
+            WorkflowId = Guid.NewGuid();
         }
 
         public void AddToWorkflow(DagEngine dag)
@@ -23,7 +23,7 @@ namespace ReactiveDAG.Core.WorkFlow
         {
             _dagEngines.Remove(dag);
         }
-        
+
 
         public void StartWorkflow()
         {
@@ -39,7 +39,7 @@ namespace ReactiveDAG.Core.WorkFlow
             }
         }
 
-        public void PauseWorkflow ()
+        public void PauseWorkflow()
         {
             if (State == TaskState.Running)
             {
@@ -68,7 +68,7 @@ namespace ReactiveDAG.Core.WorkFlow
         }
 
         public void CompleteWorkflow()
-        {       
+        {
             if (State == TaskState.Running && AreAllDagsCompleted())
             {
                 State = TaskState.Completed;

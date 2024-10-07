@@ -8,6 +8,7 @@ namespace ReactiveDAG.Core.Engine
     public class Builder
     {
         private readonly DagEngine _dagEngine;
+        private  Workflow _workFlow;
         private readonly List<BaseCell> _cells = [];
         public Builder()
         {
@@ -67,6 +68,46 @@ namespace ReactiveDAG.Core.Engine
         public DagEngine Build()
         {
             return _dagEngine;
+        }
+
+        public Builder StartWorkflow(string workflowName)
+        {
+            _workFlow = new Workflow(workflowName);
+            return this;
+        }
+
+        public Builder AddDagToCurrentWorkflow(DagEngine dag)
+        {
+            if (_workFlow == null)
+                throw new InvalidOperationException("You must start a workflow before adding DAGs.");
+
+            _workFlow.AddToWorkflow(dag);
+            return this;
+        }
+
+        public Builder RunCurrentWorkflow()
+        {
+            if (_workFlow == null)
+                throw new InvalidOperationException("No current workflow to run.");
+
+            _workFlow.StartWorkflow();
+            return this;
+        }
+        public Builder ResetWorkflow()
+        {
+            _workFlow = null;
+            return this;
+        }
+
+        public Builder PauseCurrentWorkflow()
+        {
+            _workFlow?.PauseWorkflow();
+            return this;
+        }
+
+        public Builder ResumeCurrentWorkflow()
+        {
+            _workFlow?.ResumeWorkflow();
         }
     }
 }
