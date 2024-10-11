@@ -19,7 +19,7 @@ namespace ReactiveDAG.Core.Engine
 
         public int NodeCount => _nodes.Count;
 
-        public async Task<T> GetValueAsync<T>(BaseCell cell)
+        public async Task<T> GetResult<T>(BaseCell cell)
         {
             if (_nodes.TryGetValue(cell.Index, out var node))
             {

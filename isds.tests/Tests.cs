@@ -13,7 +13,7 @@ namespace ReactiveDAG.tests
             var dag = new DagEngine();
             var cell = dag.AddInput(cellValue);
             Assert.Equal(CellType.Input, cell.Type);
-            int retrievedValue = await dag.GetValueAsync<int>(cell);
+            int retrievedValue = await dag.GetResult<int>(cell);
             Assert.Equal(cellValue, retrievedValue);
         }
 
@@ -25,7 +25,7 @@ namespace ReactiveDAG.tests
             var functionCell = dag.AddFunction(inputCells,
                 inputs => (int)inputs[0] + (int)inputs[1]
             );
-            var result = await dag.GetValueAsync<int>(functionCell);
+            var result = await dag.GetResult<int>(functionCell);
             Assert.Equal(10, result);
         }
 
@@ -44,7 +44,7 @@ namespace ReactiveDAG.tests
                 }, TimeSpan.FromSeconds(interval), runOnce: true, out var resultCell)
                 .Build();
             await Task.Delay(TimeSpan.FromSeconds(interval));
-            var resultValue = await builder.GetValueAsync<double>(resultCell);
+            var resultValue = await builder.GetResult<double>(resultCell);
             var endTime = DateTime.UtcNow;
             var elapsedTime = (endTime - startTime).TotalSeconds;
             Assert.True(elapsedTime >= 1.75 && elapsedTime <= 2.5);
@@ -68,7 +68,7 @@ namespace ReactiveDAG.tests
            }, TimeSpan.FromSeconds(interval),
            runOnce: false, out var resultCell)
            .Build();            
-            var initialResult = await builder2.GetValueAsync<double>(resultCell);
+            var initialResult = await builder2.GetResult<double>(resultCell);
             Assert.Equal(6, initialResult);
             await Task.Delay(TimeSpan.FromSeconds(interval));
             Assert.True(results.Count >=2);
@@ -87,11 +87,11 @@ namespace ReactiveDAG.tests
             var functionCell = dag.AddFunction(new BaseCell[] { inputCell, inputCell },
                 inputs => (int)inputs[0] * (int)inputs[1]
             );
-            var initialResult = await dag.GetValueAsync<int>(functionCell);
+            var initialResult = await dag.GetResult<int>(functionCell);
             Assert.Equal(16, initialResult);
 
             dag.UpdateInput(inputCell, 5);
-            var updatedResult = await dag.GetValueAsync<int>(functionCell);
+            var updatedResult = await dag.GetResult<int>(functionCell);
             Assert.Equal(25, updatedResult);
         }
 
@@ -107,8 +107,8 @@ namespace ReactiveDAG.tests
                 new BaseCell[] { dag.AddInput(4.5), dag.AddInput(2) },
                 inputs => (double)inputs[0] + (int)inputs[1]
             );
-            var concatResult = await dag.GetValueAsync<string>(concatFuncCell);
-            var additionResult = await dag.GetValueAsync<double>(additionFuncCell);
+            var concatResult = await dag.GetResult<string>(concatFuncCell);
+            var additionResult = await dag.GetResult<double>(additionFuncCell);
             Assert.Equal("RS", concatResult);
             Assert.Equal(6.5, additionResult);
         }
@@ -129,7 +129,7 @@ namespace ReactiveDAG.tests
                 new BaseCell[] { concatFuncCell, sumFuncCell },
                 inputs => (string)inputs[0] + " " + (int)inputs[1]
             );
-            var combinedResult = await dag.GetValueAsync<string>(combinedFuncCell);
+            var combinedResult = await dag.GetResult<string>(combinedFuncCell);
             Assert.Equal("RS 15", combinedResult);
         }
 
@@ -156,7 +156,7 @@ namespace ReactiveDAG.tests
                 inputs => (int)inputs[0] - (int)inputs[1]
             );
 
-            var result = await dag.GetValueAsync<int>(finalFuncCell);
+            var result = await dag.GetResult<int>(finalFuncCell);
             Assert.Equal(20, result);
         }
 
@@ -169,11 +169,11 @@ namespace ReactiveDAG.tests
                 new BaseCell[] { inputCell },
                 inputs => (int)inputs[0] * 2
             );
-            var initialResult = await dag.GetValueAsync<int>(functionCell);
+            var initialResult = await dag.GetResult<int>(functionCell);
             Assert.Equal(50, initialResult);
             Assert.False(DagUtils.HasChanged(inputCell));
             dag.UpdateInput(inputCell, 4);
-            var updatedResult = await dag.GetValueAsync<int>(functionCell);
+            var updatedResult = await dag.GetResult<int>(functionCell);
             Assert.Equal(8, updatedResult);
             Assert.True(DagUtils.HasChanged(inputCell));
         }
@@ -224,11 +224,11 @@ namespace ReactiveDAG.tests
                     A[3] + B[3]  // 6.0 + -9.0 = -3.0
                 };
             });
-            var result = await dag.GetValueAsync<double[]>(matrixAdditionFunctionCell);
+            var result = await dag.GetResult<double[]>(matrixAdditionFunctionCell);
             var expectedResult = new double[] { 7.0, 8.0, 5.0, -3.0 };
             Assert.Equal(expectedResult, result);
             dag.UpdateInput(matrixA[0], 4.0);
-            var updatedResult = await dag.GetValueAsync<double[]>(matrixAdditionFunctionCell);
+            var updatedResult = await dag.GetResult<double[]>(matrixAdditionFunctionCell);
             var expectedUpdate = new double[] { 8.0, 8.0, 5.0, -3.0 };
             Assert.Equal(expectedUpdate, updatedResult);
         }
@@ -253,7 +253,7 @@ namespace ReactiveDAG.tests
                     A[0] * A[3] - A[1] * A[2]
                 };
             });
-            var result = await dag.GetValueAsync<double[]>(matrixDeterminantFunctionCell);
+            var result = await dag.GetResult<double[]>(matrixDeterminantFunctionCell);
             Assert.Equal(-14.0, result[0]);
         }
 
@@ -264,7 +264,7 @@ namespace ReactiveDAG.tests
             var dag = new DagEngine();
             var cell = dag.AddInput(cellValue);
             Assert.Equal(CellType.Input, cell.Type);
-            int retrievedValue = await dag.GetValueAsync<int>(cell);
+            int retrievedValue = await dag.GetResult<int>(cell);
             Assert.Equal(cellValue, retrievedValue);
             int initialCount = dag.NodeCount;
             dag.RemoveNode(cell);
@@ -306,7 +306,7 @@ namespace ReactiveDAG.tests
                 finalCells.Cast<BaseCell>().ToArray(),
                 inputs => inputs.Sum(input => (int)input)
             );
-            var finalResult = await dag.GetValueAsync<int>(aggregateCell);
+            var finalResult = await dag.GetResult<int>(aggregateCell);
             var expectedSum = Enumerable.Range(0, inputCount).Sum();
             var expectedIntermediateResults = new List<int>();
 
@@ -325,7 +325,7 @@ namespace ReactiveDAG.tests
 
             Assert.Equal(expectedFinalSum, finalResult);
             dag.UpdateInput(inputCells[0], 1000);
-            var updatedResult = await dag.GetValueAsync<int>(aggregateCell);
+            var updatedResult = await dag.GetResult<int>(aggregateCell);
             expectedIntermediateResults[0] = 1000 + 1;
             expectedFinalResults[0] = expectedIntermediateResults[0] * expectedIntermediateResults[1];
             var updatedExpectedFinalSum = expectedFinalResults.Sum();

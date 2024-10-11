@@ -1,4 +1,5 @@
 ﻿using ReactiveDAG.Core.Models;
+using System.Xml.Linq;
 
 namespace ReactiveDAG.Core.Engine
 {
@@ -76,12 +77,12 @@ namespace ReactiveDAG.Core.Engine
             return this;
         }
 
-        public Builder AddDagToCurrentWorkflow(DagEngine dag)
+        public Builder AddDagToCurrentWorkflow()
         {
             if (_workFlow == null)
                 throw new InvalidOperationException("You must start a workflow before adding DAGs.");
 
-            _workFlow.AddToWorkflow(dag);
+            _workFlow.AddToWorkflow(_dagEngine);
             return this;
         }
 
@@ -108,6 +109,7 @@ namespace ReactiveDAG.Core.Engine
         public Builder ResumeCurrentWorkflow()
         {
             _workFlow?.ResumeWorkflow();
+            return this;
         }
     }
 }
