@@ -41,7 +41,7 @@ namespace ReactiveDAG.Core.Models
             if (State.State == TaskState.Pending || State.State == TaskState.Paused)
             {
                 State.State = TaskState.Running;
-                _ = ExecuteNodeAsync();
+                _ = ExecuteNodeAsync(); //starts execution on a different thread
             }
             else
             {
@@ -52,8 +52,9 @@ namespace ReactiveDAG.Core.Models
         public void Pause()
         {
             if (State.State != TaskState.Running) return;
-            _cancellationTokenSource.Cancel();
-            SaveNodeState(NodeId);
+
+            _cancellationTokenSource.Cancel(); 
+            SaveNodeState(NodeId); 
             State.State = TaskState.Paused;
         }
 
@@ -68,13 +69,13 @@ namespace ReactiveDAG.Core.Models
         public void Resume()
         {
             if (State.State != TaskState.Paused) return;
-            // TODO: implement restoring a task that was paused
-            State.State = TaskState.Running;
+
+            State.State = TaskState.Running; 
             _cancellationTokenSource = new CancellationTokenSource();
-            _ = ExecuteNodeAsync();
+            _ = ExecuteNodeAsync(); 
         }
 
-        private async Task ExecuteNodeAsync()
+        public async Task ExecuteNodeAsync()
         {
             try
             {
@@ -82,15 +83,19 @@ namespace ReactiveDAG.Core.Models
                 {
                     if (_cancellationTokenSource.Token.IsCancellationRequested)
                     {
-                        State.State = TaskState.Paused;
-                        return;
+                        State.State = TaskState.Paused; 
+                        return; 
                     }
+
                     var result = await ComputeNodeValueAsync();
                     if (result != null)
                     {
                         State.State = TaskState.Completed;
-                        break;
+                        break; 
                     }
+
+                    //small delay here if needed to prevent tight looping
+                    await Task.Delay(100); 
                 }
             }
             catch (Exception ex)
@@ -105,7 +110,7 @@ namespace ReactiveDAG.Core.Models
             if (_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 State.State = TaskState.Stopped;
-                return null;
+                return null; 
             }
 
             State.State = TaskState.Running;
@@ -113,7 +118,15 @@ namespace ReactiveDAG.Core.Models
             if (_interval.HasValue && _taskSchedulingService != null)
             {
                 _ = _taskSchedulingService.ScheduleTaskAsync(
-                    _computeNodeValue,
+                    async () =>
+                    {
+                        if (_cancellationTokenSource.Token.IsCancellationRequested)
+                        {
+                            return null;
+                        }
+
+                        return await _computeNodeValue();
+                    },
                     _interval.Value,
                     _runOnce,
                     Cell.Index

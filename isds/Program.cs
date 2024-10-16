@@ -4,6 +4,7 @@ using System.Xml.Linq;
 
 internal class Program
 {
+      private static CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
     private static async Task Main(string[] args)
     {
         //Builder: Constructs a single DAG.
@@ -67,6 +68,7 @@ internal class Program
         //
         // Demo to show using workflows to manage DAGs
         //
+
         var builder = Builder.Create();
         bool isFirstRun = true;
         var myTask = builder
@@ -74,6 +76,12 @@ internal class Program
             .AddInput(2.0, out var inputCell)
             .AddScheduledFunction(inputs =>
                 {
+                    if (_cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        Console.WriteLine("Task execution skipped due to cancellation request.");
+                        return 0.0; 
+                    }
+
                     var currentValue = Convert.ToDouble(inputs[0]);
                     var newValue = isFirstRun ? currentValue : currentValue * 2;
                     isFirstRun = false;
@@ -82,16 +90,23 @@ internal class Program
                 }, TimeSpan.FromSeconds(2),
                 runOnce: false,
                 out var resultCell2)
-            
             .AddDagToCurrentWorkflow()
             .Build()
             .GetResult<double>(resultCell2);
-            
 
+        Console.WriteLine("Running workflow...");
+        await Task.Delay(TimeSpan.FromSeconds(4)); 
 
+  
+        Console.WriteLine("Pausing workflow...");
+        builder.PauseCurrentWorkflow();
 
-     //await myTask.GetResult<double>(resultCell2);
+        Console.WriteLine("Workflow paused...");
+        
+        await Task.Delay(TimeSpan.FromSeconds(4));
+        builder.ResumeCurrentWorkflow();
+        Console.WriteLine("Workflow resumed.");
 
-        Console.ReadLine();
+        //Console.ReadLine();
     }
 }

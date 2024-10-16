@@ -8,9 +8,11 @@ namespace ReactiveDAG.Core.Engine
     /// </summary>
     public class Builder
     {
+        private CancellationTokenSource _workflowCancellationTokenSource;
         private readonly DagEngine _dagEngine;
         private  Workflow _workFlow;
         private readonly List<BaseCell> _cells = [];
+
         public Builder()
         {
             _dagEngine = new DagEngine();
@@ -73,6 +75,7 @@ namespace ReactiveDAG.Core.Engine
 
         public Builder StartWorkflow(string workflowName)
         {
+            _workflowCancellationTokenSource = new CancellationTokenSource();
             _workFlow = new Workflow(workflowName);
             return this;
         }
@@ -102,6 +105,7 @@ namespace ReactiveDAG.Core.Engine
 
         public Builder PauseCurrentWorkflow()
         {
+            _workflowCancellationTokenSource?.Cancel();  // Cancel the workflow execution
             _workFlow?.PauseWorkflow();
             return this;
         }

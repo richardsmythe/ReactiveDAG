@@ -61,20 +61,35 @@ namespace ReactiveDAG.Core.Engine
             BaseCell[] cells,
             Func<object[], TResult> function,
             TimeSpan? interval = null,
-            bool runOnce = true)
+            bool runOnce = true,
+            CancellationToken cancellationToken = default)
         {
             var cell = Cell<TResult>.CreateFunctionCell(_nextIndex++);
             var node = new DagNode(cell, async () =>
             {
-                var inputValues = await Task
-                .WhenAll(cells.Select(c => _nodes[c.Index].DeferredComputedNodeValue.Value));
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Console.WriteLine("Task canceled");
+                    return default;
+                }
+
+                var inputValues = await Task.WhenAll(cells.Select(c => _nodes[c.Index].DeferredComputedNodeValue.Value));
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return default;
+                }
+
                 var result = function(inputValues);
                 return result;
             }, _taskSchedulingService, interval, runOnce);
+
             foreach (var c in cells)
             {
                 node.Dependencies.Add(c.Index);
             }
+
             _nodes[cell.Index] = node;
             return cell;
         }
