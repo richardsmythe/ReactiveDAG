@@ -1,7 +1,7 @@
-﻿
-using ReactiveDAG.Core.Models;
+﻿using ReactiveDAG.Core.Models;
 using ReactiveDAG.Core.Services;
 using ReactiveDAG.Services;
+using System.Collections.Concurrent;
 
 namespace ReactiveDAG.Core.Engine
 {
@@ -11,14 +11,15 @@ namespace ReactiveDAG.Core.Engine
         RefreshDependencies
     }
 
-    public class DagEngine
+    public class DagEngine : IDisposable 
     {
         private readonly TaskSchedulingService _taskSchedulingService = new();
-        private readonly Dictionary<int, DagNode> _nodes = [];
+        private readonly Dictionary<int, DagNode> _nodes = new();
         private int _nextIndex = 0;
+        private CancellationTokenSource _cancellationTokenSource;
 
         public int NodeCount => _nodes.Count;
-
+  
         public async Task<T> GetResult<T>(BaseCell cell)
         {
             if (_nodes.TryGetValue(cell.Index, out var node))
@@ -48,7 +49,6 @@ namespace ReactiveDAG.Core.Engine
             .Contains(index))
             .Select(n => n.Key);
 
-
         public Cell<T> AddInput<T>(T value)
         {
             var cell = Cell<T>.CreateInputCell(_nextIndex++, value);
@@ -61,29 +61,29 @@ namespace ReactiveDAG.Core.Engine
             BaseCell[] cells,
             Func<object[], TResult> function,
             TimeSpan? interval = null,
-            bool runOnce = true,
-            CancellationToken cancellationToken = default)
+            bool runOnce = true)
         {
+            _cancellationTokenSource ??= new CancellationTokenSource();
             var cell = Cell<TResult>.CreateFunctionCell(_nextIndex++);
+            var cancellationToken = _cancellationTokenSource.Token;
+
             var node = new DagNode(cell, async () =>
             {
-
-                if (cancellationToken.IsCancellationRequested)
+                cancellationToken.ThrowIfCancellationRequested();
+                var inputValues = await Task.WhenAll(cells.Select(async c =>
                 {
-                    Console.WriteLine("Task canceled");
-                    return default;
-                }
-
-                var inputValues = await Task.WhenAll(cells.Select(c => _nodes[c.Index].DeferredComputedNodeValue.Value));
-
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return default;
-                }
-
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return await _nodes[c.Index].DeferredComputedNodeValue.Value;
+                }));
+                cancellationToken.ThrowIfCancellationRequested();
                 var result = function(inputValues);
+
                 return result;
-            }, _taskSchedulingService, interval, runOnce);
+            }, 
+            _taskSchedulingService,
+            interval,
+            runOnce,
+            cancellationToken);
 
             foreach (var c in cells)
             {
@@ -163,16 +163,17 @@ namespace ReactiveDAG.Core.Engine
                 }
             }
         }
-        public void PauseAllNodes()
-        {
-            foreach (var node in _nodes.Values)
-            {
-                if (node.State.State == TaskState.Running)
-                {
-                    node.Pause();
-                }
-            }
-        }
+
+        //public void PauseAllNodes()
+        //{
+        //    foreach (var node in _nodes.Values)
+        //    {
+        //        if (node.State.State == TaskState.Running)
+        //        {
+        //            node.Pause();
+        //        }
+        //    }
+        //}
 
         public void StopAllNodes()
         {
@@ -185,67 +186,63 @@ namespace ReactiveDAG.Core.Engine
             }
         }
 
-        public void ResumeAllNodes()
-        {
-            foreach (var node in _nodes.Values)
-            {
-                if (node.State.State == TaskState.Paused)
-                {
+        //public void ResumeAllNodes()
+        //{
+        //    foreach (var node in _nodes.Values)
+        //    {
+        //        if (node.State.State == TaskState.Paused)
+        //        {
+        //            node.Resume();
+        //        }
+        //    }
+        //}
 
-                    node.Resume();
-                }
-            }
-        }
+        //public void StartNode(int nodeIndex)
+        //{
+        //    if (_nodes.TryGetValue(nodeIndex, out var node))
+        //    {
+        //        node.Start();
+        //    }
+        //    else
+        //    {
+        //        throw new InvalidOperationException("Node not found.");
+        //    }
+        //}
 
-        public void StartNode(int nodeIndex)
-        {
-            if (_nodes.TryGetValue(nodeIndex, out var node))
-            {
-                node.Start();
-            }
-            else
-            {
-                throw new InvalidOperationException("Node not found.");
-            }
-        }
+        //public void PauseNode(int nodeIndex)
+        //{
+        //    if (_nodes.TryGetValue(nodeIndex, out var node))
+        //    {
+        //        node.Pause();
+        //    }
+        //    else
+        //    {
+        //        throw new InvalidOperationException("Node not found.");
+        //    }
+        //}
 
-        public void PauseNode(int nodeIndex)
-        {
-            if (_nodes.TryGetValue(nodeIndex, out var node))
-            {
-                node.Pause();
+        //public void StopNode(int nodeIndex)
+        //{
+        //    if (_nodes.TryGetValue(nodeIndex, out var node))
+        //    {
+        //        node.Stop();
+        //    }
+        //    else
+        //    {
+        //        throw new InvalidOperationException("Node not found.");
+        //    }
+        //}
 
-            }
-            else
-            {
-                throw new InvalidOperationException("Node not found.");
-            }
-        }
-
-
-        public void StopNode(int nodeIndex)
-        {
-            if (_nodes.TryGetValue(nodeIndex, out var node))
-            {
-                node.Stop();
-            }
-            else
-            {
-                throw new InvalidOperationException("Node not found.");
-            }
-        }
-
-        public void ResumeNode(int nodeIndex)
-        {
-            if (_nodes.TryGetValue(nodeIndex, out var node))
-            {
-                node.Resume();
-            }
-            else
-            {
-                throw new InvalidOperationException("Node not found.");
-            }
-        }
+        //public void ResumeNode(int nodeIndex)
+        //{
+        //    if (_nodes.TryGetValue(nodeIndex, out var node))
+        //    {
+        //        if (node.State.State == TaskState.Paused)
+        //        {
+        //            node.Resume();  // Ensure the token is re-initialized before resuming
+        //        }
+        //    }
+        //}
 
         public bool AreAllNodesCompleted()
         {
@@ -258,6 +255,6 @@ namespace ReactiveDAG.Core.Engine
             }
             return true;
         }
-
+        public void Dispose() => _cancellationTokenSource?.Dispose();
     }
 }

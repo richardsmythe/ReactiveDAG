@@ -1,5 +1,4 @@
 ﻿using ReactiveDAG.Core.Models;
-using System.Xml.Linq;
 
 namespace ReactiveDAG.Core.Engine
 {
@@ -8,9 +7,9 @@ namespace ReactiveDAG.Core.Engine
     /// </summary>
     public class Builder
     {
-        private CancellationTokenSource _workflowCancellationTokenSource;
+
         private readonly DagEngine _dagEngine;
-        private  Workflow _workFlow;
+        private Workflow _workFlow;
         private readonly List<BaseCell> _cells = [];
 
         public Builder()
@@ -75,45 +74,55 @@ namespace ReactiveDAG.Core.Engine
 
         public Builder StartWorkflow(string workflowName)
         {
-            _workflowCancellationTokenSource = new CancellationTokenSource();
+
             _workFlow = new Workflow(workflowName);
+
             return this;
         }
 
-        public Builder AddDagToCurrentWorkflow()
+        public Builder StopWorkflow()
         {
-            if (_workFlow == null)
-                throw new InvalidOperationException("You must start a workflow before adding DAGs.");
-
-            _workFlow.AddToWorkflow(_dagEngine);
+            
+                Console.WriteLine($"Stopping workflow: {_workFlow.Name}");
+                _workFlow?.StopWorkflow();
+            
             return this;
         }
+    
 
-        public Builder RunCurrentWorkflow()
-        {
-            if (_workFlow == null)
-                throw new InvalidOperationException("No current workflow to run.");
+    public Builder AddDagToCurrentWorkflow()
+    {
+        if (_workFlow == null)
+            throw new InvalidOperationException("You must start a workflow before adding DAGs.");
 
-            _workFlow.StartWorkflow();
-            return this;
-        }
-        public Builder ResetWorkflow()
-        {
-            _workFlow = null;
-            return this;
-        }
-
-        public Builder PauseCurrentWorkflow()
-        {
-            _workflowCancellationTokenSource?.Cancel();  // Cancel the workflow execution
-            _workFlow?.PauseWorkflow();
-            return this;
-        }
-
-        public Builder ResumeCurrentWorkflow()
-        {
-            _workFlow?.ResumeWorkflow();
-            return this;
-        }
+        _workFlow.AddToWorkflow(_dagEngine);
+        return this;
     }
+
+    public Builder RunCurrentWorkflow()
+    {
+        if (_workFlow == null)
+            throw new InvalidOperationException("No current workflow to run.");
+
+        _workFlow.StartWorkflow();
+        return this;
+    }
+    public Builder ResetWorkflow()
+    {
+        _workFlow = null;
+        return this;
+    }
+
+    public Builder PauseCurrentWorkflow()
+    {
+        _workFlow?.PauseWorkflow();
+        return this;
+    }
+
+    //public Builder ResumeCurrentWorkflow()
+    //{
+    //    _workFlow?.ResumeWorkflow();
+    //    return this;
+    //}
+}
 }

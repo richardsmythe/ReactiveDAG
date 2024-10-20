@@ -39,59 +39,75 @@ namespace ReactiveDAG.Core.Engine
             }
         }
 
+        public void StopWorkflow()
+        {
+            //if (State == TaskState.Running)
+            //{
+                State = TaskState.Stopped;
+                Console.WriteLine($"Workflow '{Name}' stopped.");
+
+                foreach (var dag in _dagEngines)
+                {
+                    dag.StopAllNodes();
+                }
+            //}
+        }
+
+
         public void PauseWorkflow()
         {
-            if (State == TaskState.Running)
-            {
-                State = TaskState.Paused;
-                Console.WriteLine($"Workflow '{Name}' paused.");
+            
+            //if (State == TaskState.Running)
+            //{
+            //    State = TaskState.Paused;
+            //    Console.WriteLine($"Workflow '{Name}' paused.");
 
-                foreach (var dag in _dagEngines)
-                {
-                    dag.PauseAllNodes();
-                }
-            }
+            //    foreach (var dag in _dagEngines)
+            //    {
+            //        dag.PauseAllNodes();
+            //    }
+            //}
         }
 
-        public void ResumeWorkflow()
-        {
-            if (State == TaskState.Paused)
-            {
-                State = TaskState.Running;
-                Console.WriteLine($"Workflow '{Name}' resumed.");
+        //public void ResumeWorkflow()
+        //{
+        //    if (State == TaskState.Paused)
+        //    {
+        //        State = TaskState.Running;
+        //        Console.WriteLine($"Workflow '{Name}' resumed.");
 
-                foreach (var dag in _dagEngines)
-                {
-                    dag.ResumeAllNodes();
-                }
-            }
-        }
+        //        foreach (var dag in _dagEngines)
+        //        {
+        //            dag.ResumeAllNodes();
+        //        }
+        //    }
+        //}
 
-        public void CompleteWorkflow()
-        {
-            if (State == TaskState.Running && AreAllDagsCompleted())
-            {
-                State = TaskState.Completed;
-                Console.WriteLine($"Workflow '{Name}' completed.");
-            }
-        }
+        //public void CompleteWorkflow()
+        //{
+        //    if (State == TaskState.Running && AreAllDagsCompleted())
+        //    {
+        //        State = TaskState.Completed;
+        //        Console.WriteLine($"Workflow '{Name}' completed.");
+        //    }
+        //}
 
-        public void FailWorkflow(Exception ex)
-        {
-            State = TaskState.Failed;
-            Console.WriteLine($"Workflow '{Name}' failed: {ex.Message}");
+        //public void FailWorkflow(Exception ex)
+        //{
+        //    State = TaskState.Failed;
+        //    Console.WriteLine($"Workflow '{Name}' failed: {ex.Message}");
 
-            foreach (var dag in _dagEngines)
-            {
-                dag.StopAllNodes();
-            }
-        }
+        //    foreach (var dag in _dagEngines)
+        //    {
+        //        dag.StopAllNodes();
+        //    }
+        //}
 
-        public void DeleteWorkflow()
-        {
-            Console.WriteLine($"Workflow '{Name}' deleted.");
-            _dagEngines.Clear();
-        }
+        //public void DeleteWorkflow()
+        //{
+        //    Console.WriteLine($"Workflow '{Name}' deleted.");
+        //    _dagEngines.Clear();
+        //}
 
         private bool AreAllDagsCompleted()
         {

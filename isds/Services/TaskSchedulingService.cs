@@ -1,4 +1,4 @@
-﻿namespace ReactiveDAG.Services
+﻿namespace ReactiveDAG.Core.Services
 {
 
     public class TaskSchedulingService
@@ -6,10 +6,10 @@
         private readonly Dictionary<int, CancellationTokenSource> _scheduledTasks = new();
 
         public Task ScheduleTaskAsync(
-        Func<Task<object>> taskFunc,
-        TimeSpan interval,
-        bool runOnce,
-        int nodeId)
+            Func<Task<object>> taskFunc,
+            TimeSpan interval,
+            bool runOnce,
+            int nodeId)
         {
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
@@ -21,7 +21,8 @@
                 {
                     try
                     {
-                        await Task.Delay(interval, cancellationToken);
+                        await Task.Delay(interval, cancellationToken); 
+                        cancellationToken.ThrowIfCancellationRequested();
 
                         var result = await taskFunc();
                         CancelTask(nodeId);
@@ -35,11 +36,13 @@
                 }
                 else
                 {
-                    while (!cancellationToken.IsCancellationRequested)
+                    while (!cancellationToken.IsCancellationRequested) 
                     {
                         try
                         {
-                            await Task.Delay(interval, cancellationToken);
+                            await Task.Delay(interval, cancellationToken); 
+
+                            cancellationToken.ThrowIfCancellationRequested(); 
 
                             var result = await taskFunc();
                             Console.WriteLine($"Task completed after interval with result: {result}");
@@ -51,7 +54,7 @@
                         }
                     }
                 }
-            });
+            }, cancellationToken); 
         }
 
 

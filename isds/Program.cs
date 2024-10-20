@@ -95,18 +95,19 @@ internal class Program
             .GetResult<double>(resultCell2);
 
         Console.WriteLine("Running workflow...");
-        await Task.Delay(TimeSpan.FromSeconds(4)); 
+        await Task.Delay(TimeSpan.FromSeconds(8)); 
 
   
-        Console.WriteLine("Pausing workflow...");
-        builder.PauseCurrentWorkflow();
+        Console.WriteLine("Stopping workflow...");
+        builder.StopWorkflow();
+        Console.WriteLine("Workflow stopped...");
 
-        Console.WriteLine("Workflow paused...");
-        
-        await Task.Delay(TimeSpan.FromSeconds(4));
-        builder.ResumeCurrentWorkflow();
-        Console.WriteLine("Workflow resumed.");
 
-        //Console.ReadLine();
+        //await Task.Delay(TimeSpan.FromSeconds(8));
+
+        //builder.ResumeCurrentWorkflow();
+        //Console.WriteLine("Workflow resumed.");
+
+        Console.ReadLine();
     }
 }

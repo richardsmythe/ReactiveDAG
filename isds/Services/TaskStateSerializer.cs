@@ -4,15 +4,9 @@ using ReactiveDAG.Core.Models;
 
 namespace ReactiveDAG.Core.Services
 {
-    public interface ITaskStateSerializer
+    public static class TaskStateSerializer
     {
-        string Serialize(NodeState node);
-        DagNode Deserialize(string serializedData);
-    }
-
-    public class JsonTaskStateSerializer : ITaskStateSerializer
-    {
-        public string Serialize(NodeState node)
+       public static string Serialize(NodeState node)
         {
             var state = new NodeState(
                 node.NodeId,
@@ -26,7 +20,7 @@ namespace ReactiveDAG.Core.Services
             return JsonConvert.SerializeObject(state);
         }
 
-        public DagNode Deserialize(string serializedData)
+        public static DagNode Deserialize(string serializedData)
         {
             var state = JsonConvert.DeserializeObject<NodeState>(serializedData);
             var cellValueType = Type.GetType(state.CellValueType);
@@ -43,6 +37,5 @@ namespace ReactiveDAG.Core.Services
 
             return node;
         }
-
     }
 }

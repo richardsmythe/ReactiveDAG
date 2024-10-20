@@ -1,7 +1,4 @@
 ﻿using ReactiveDAG.Core.Services;
-using ReactiveDAG.Services;
-using System.Reflection.Metadata.Ecma335;
-using System.Xml.Linq;
 
 namespace ReactiveDAG.Core.Models
 {
@@ -12,7 +9,7 @@ namespace ReactiveDAG.Core.Models
         public NodeState State { get; private set; }
         private readonly Func<Task<object>> _computeNodeValue;
         private readonly TaskSchedulingService _taskSchedulingService;
-        private readonly ITaskStateSerializer _serializer;
+
         private readonly TimeSpan? _interval;
         private readonly bool _runOnce;
         private CancellationTokenSource _cancellationTokenSource;
@@ -23,19 +20,22 @@ namespace ReactiveDAG.Core.Models
              Func<Task<object>> computeValue, TaskSchedulingService taskSchedulingService = null,
              TimeSpan? interval = null,
              bool runOnce = false,
-             ITaskStateSerializer serializer = null)
+             //ITaskStateSerializer serializer = null,
+             CancellationToken? cancellationToken = default)
              : base(cell, computeValue)
         {
             NodeId = cell.Index;
             _computeNodeValue = computeValue;
-            _serializer = serializer;
+            //_serializer = serializer;
             _taskSchedulingService = taskSchedulingService;
             _interval = interval;
             _runOnce = runOnce;
-            _cancellationTokenSource = new CancellationTokenSource();
-            State = new NodeState(NodeId, TaskState.Pending, null, new List<int>(),cell.Type, cell.Type.GetType().FullName);
+            if (cancellationToken != null) _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource((CancellationToken)cancellationToken);
+            State = new NodeState(NodeId, TaskState.Pending, null, new List<int>(), cell.Type, cell.Type.GetType().FullName);
         }
-         
+
+        public CancellationToken Token => _cancellationTokenSource.Token;
+
         public void Start()
         {
             if (State.State == TaskState.Pending || State.State == TaskState.Paused)
@@ -49,31 +49,36 @@ namespace ReactiveDAG.Core.Models
             }
         }
 
-        public void Pause()
-        {
-            if (State.State != TaskState.Running) return;
 
-            _cancellationTokenSource.Cancel(); 
-            SaveNodeState(NodeId); 
-            State.State = TaskState.Paused;
-        }
 
         public void Stop()
         {
             if (State.State != TaskState.Running && State.State != TaskState.Paused) return;
             _cancellationTokenSource.Cancel();
+            _taskSchedulingService?.CancelTask(NodeId);
             State.State = TaskState.Stopped;
         }
 
+        //public void Pause()
+        //{
+        //    if (State.State == TaskState.Running)
+        //    {
+        //        _cancellationTokenSource.Cancel();
+        //        //SaveNodeState(NodeId); 
+        //        State.State = TaskState.Paused;
+        //    }
+        //}
 
-        public void Resume()
-        {
-            if (State.State != TaskState.Paused) return;
+        //public void Resume()
+        //{
+        //    if (State.State == TaskState.Paused)
+        //    {
+        //        State.State = TaskState.Running;
+        //        _cancellationTokenSource = new CancellationTokenSource();
+        //        _ = ExecuteNodeAsync();
+        //    }
 
-            State.State = TaskState.Running; 
-            _cancellationTokenSource = new CancellationTokenSource();
-            _ = ExecuteNodeAsync(); 
-        }
+        //}
 
         public async Task ExecuteNodeAsync()
         {
@@ -81,22 +86,23 @@ namespace ReactiveDAG.Core.Models
             {
                 while (true)
                 {
-                    if (_cancellationTokenSource.Token.IsCancellationRequested)
-                    {
-                        State.State = TaskState.Paused; 
-                        return; 
-                    }
+                   
+                    _cancellationTokenSource.Token.ThrowIfCancellationRequested();
 
                     var result = await ComputeNodeValueAsync();
+
                     if (result != null)
                     {
                         State.State = TaskState.Completed;
-                        break; 
+                        break;
                     }
 
-                    //small delay here if needed to prevent tight looping
-                    await Task.Delay(100); 
+                    await Task.Delay(100, _cancellationTokenSource.Token); 
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                State.State = TaskState.Paused;
             }
             catch (Exception ex)
             {
@@ -107,10 +113,11 @@ namespace ReactiveDAG.Core.Models
 
         public override async Task<object> ComputeNodeValueAsync()
         {
+            _cancellationTokenSource ??= new CancellationTokenSource();
             if (_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 State.State = TaskState.Stopped;
-                return null; 
+                return null;
             }
 
             State.State = TaskState.Running;
@@ -135,8 +142,10 @@ namespace ReactiveDAG.Core.Models
                 // Continue with the program flow without waiting for the above scheduled task to finish
                 return await _computeNodeValue();
             }
+
             return await _computeNodeValue();
         }
+
 
         internal object GetPartialResult()
         {
@@ -146,24 +155,24 @@ namespace ReactiveDAG.Core.Models
             throw new NotImplementedException();
         }
 
-        public void SaveNodeState(int nodeId)
-        {
-            var nodeState = new NodeState(
-                NodeId,
-                State.State,
-                GetPartialResult(),
-                Dependencies.ToList(), 
-                Cell.Type,
-                Cell.GetType().GenericTypeArguments[0].FullName
-            );
+        //public void SaveNodeState(int nodeId)
+        //{
+        //    var nodeState = new NodeState(
+        //        NodeId,
+        //        State.State,
+        //        GetPartialResult(),
+        //        Dependencies.ToList(),
+        //        Cell.Type,
+        //        Cell.GetType().GenericTypeArguments[0].FullName
+        //    );
 
 
-            var serializedNode = _serializer.Serialize(nodeState);
-            var tempStoragePath = Path.Combine(Directory.GetCurrentDirectory(), "TempTaskStorage");
-            Directory.CreateDirectory(tempStoragePath); 
-            var fileName = Path.Combine(tempStoragePath, $"NodeState_{nodeId}_{DateTime.Now:yyyyMMdd_HHmmss}.json");
-            File.WriteAllText(fileName, serializedNode);
-        }
+        //    var serializedNode = TaskStateSerializer.Serialize(nodeState);
+        //    var tempStoragePath = Path.Combine(Directory.GetCurrentDirectory(), "TempTaskStorage");
+        //    Directory.CreateDirectory(tempStoragePath);
+        //    var fileName = Path.Combine(tempStoragePath, $"NodeState_{nodeId}_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+        //    File.WriteAllText(fileName, serializedNode);
+        //}
 
     }
 }
