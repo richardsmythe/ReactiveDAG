@@ -42,9 +42,9 @@ It simplifies the management of **complex dependencies** in systems where inputs
 
 ## TODO
 
-1. **Workflow Orchestration**: Let’s say you have several workflows—one for data ingestion, one for processing, and another for reporting. The DagEngine could orchestrate the start, pause, and resumption of each workflow independently. You could also track the progress of each workflow, ensuring that dependencies between nodes are respected and dynamically adjusting the workflow as needed 
-
-2. **Event-Driven Triggers**: Allows external events such as file uploads, HTTP requests, or database updates to trigger the execution of tasks, making the engine flexible and reactive to changes outside the graph.
+1. **Workflow Orchestration**: Let’s say you have several workflows—one for data ingestion, one for processing, and another for reporting. The DagEngine could orchestrate the start, pause, and resumption of each workflow independently. You could also track the progress of each workflow, ensuring that dependencies between nodes are respected and dynamically adjusting the workflow as needed
+2. **Saving Task State**: Related to the above, a particular task should be able to be saved when it's state changes. For example if a task is suddenly paused or stopped, it should save the task's state and any partial data so that it can be resumed again from that point.
+3. **Event-Driven Triggers**: Allows external events such as file uploads, HTTP requests, or database updates to trigger the execution of tasks, making the engine flexible and reactive to changes outside the graph.
 
 ## Contribution
 
