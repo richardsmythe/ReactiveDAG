@@ -41,22 +41,19 @@ namespace ReactiveDAG.Core.Engine
 
         public void StopWorkflow()
         {
-            //if (State == TaskState.Running)
-            //{
-                State = TaskState.Stopped;
-                Console.WriteLine($"Workflow '{Name}' stopped.");
-
+            if (State == TaskState.Pending || State == TaskState.Running)
+            {
                 foreach (var dag in _dagEngines)
                 {
                     dag.StopAllNodes();
                 }
-            //}
+                State = TaskState.Stopped;
+            }
         }
-
 
         public void PauseWorkflow()
         {
-            
+
             //if (State == TaskState.Running)
             //{
             //    State = TaskState.Paused;

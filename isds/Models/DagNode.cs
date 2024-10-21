@@ -49,8 +49,6 @@ namespace ReactiveDAG.Core.Models
             }
         }
 
-
-
         public void Stop()
         {
             if (State.State != TaskState.Running && State.State != TaskState.Paused) return;
@@ -86,18 +84,15 @@ namespace ReactiveDAG.Core.Models
             {
                 while (true)
                 {
-                   
+
                     _cancellationTokenSource.Token.ThrowIfCancellationRequested();
-
                     var result = await ComputeNodeValueAsync();
-
                     if (result != null)
                     {
                         State.State = TaskState.Completed;
                         break;
                     }
-
-                    await Task.Delay(100, _cancellationTokenSource.Token); 
+                    await Task.Delay(100, _cancellationTokenSource.Token);
                 }
             }
             catch (OperationCanceledException)
@@ -119,9 +114,7 @@ namespace ReactiveDAG.Core.Models
                 State.State = TaskState.Stopped;
                 return null;
             }
-
             State.State = TaskState.Running;
-
             if (_interval.HasValue && _taskSchedulingService != null)
             {
                 _ = _taskSchedulingService.ScheduleTaskAsync(
@@ -138,14 +131,10 @@ namespace ReactiveDAG.Core.Models
                     _runOnce,
                     Cell.Index
                 );
-
-                // Continue with the program flow without waiting for the above scheduled task to finish
                 return await _computeNodeValue();
             }
-
             return await _computeNodeValue();
         }
-
 
         internal object GetPartialResult()
         {
@@ -167,12 +156,12 @@ namespace ReactiveDAG.Core.Models
         //    );
 
 
-        //    var serializedNode = TaskStateSerializer.Serialize(nodeState);
-        //    var tempStoragePath = Path.Combine(Directory.GetCurrentDirectory(), "TempTaskStorage");
-        //    Directory.CreateDirectory(tempStoragePath);
-        //    var fileName = Path.Combine(tempStoragePath, $"NodeState_{nodeId}_{DateTime.Now:yyyyMMdd_HHmmss}.json");
-        //    File.WriteAllText(fileName, serializedNode);
-        //}
+            //    var serializedNode = TaskStateSerializer.Serialize(nodeState);
+            //    var tempStoragePath = Path.Combine(Directory.GetCurrentDirectory(), "TempTaskStorage");
+            //    Directory.CreateDirectory(tempStoragePath);
+            //    var fileName = Path.Combine(tempStoragePath, $"NodeState_{nodeId}_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+            //    File.WriteAllText(fileName, serializedNode);
+            //}
 
-    }
+        }
 }

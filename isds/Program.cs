@@ -72,7 +72,7 @@ internal class Program
         var builder = Builder.Create();
         bool isFirstRun = true;
         var myTask = builder
-            .StartWorkflow("MyMultiplicationWorkflow")
+            .CreateWorkflow("MyMultiplicationWorkflow")
             .AddInput(2.0, out var inputCell)
             .AddScheduledFunction(inputs =>
                 {
@@ -81,7 +81,6 @@ internal class Program
                         Console.WriteLine("Task execution skipped due to cancellation request.");
                         return 0.0; 
                     }
-
                     var currentValue = Convert.ToDouble(inputs[0]);
                     var newValue = isFirstRun ? currentValue : currentValue * 2;
                     isFirstRun = false;
@@ -95,15 +94,12 @@ internal class Program
             .GetResult<double>(resultCell2);
 
         Console.WriteLine("Running workflow...");
+
+        // Add a delay so the function above can run a little before stopping.
         await Task.Delay(TimeSpan.FromSeconds(8)); 
-
-  
-        Console.WriteLine("Stopping workflow...");
+   
         builder.StopWorkflow();
-        Console.WriteLine("Workflow stopped...");
-
-
-        //await Task.Delay(TimeSpan.FromSeconds(8));
+    
 
         //builder.ResumeCurrentWorkflow();
         //Console.WriteLine("Workflow resumed.");

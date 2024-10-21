@@ -72,9 +72,8 @@ namespace ReactiveDAG.Core.Engine
             return _dagEngine;
         }
 
-        public Builder StartWorkflow(string workflowName)
+        public Builder CreateWorkflow(string workflowName)
         {
-
             _workFlow = new Workflow(workflowName);
 
             return this;
@@ -82,8 +81,7 @@ namespace ReactiveDAG.Core.Engine
 
         public Builder StopWorkflow()
         {
-            
-                Console.WriteLine($"Stopping workflow: {_workFlow.Name}");
+                Console.WriteLine($"Stopping {_workFlow.Name} workflow and all tasks");
                 _workFlow?.StopWorkflow();
             
             return this;
